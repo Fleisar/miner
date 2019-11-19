@@ -1,0 +1,1038 @@
+<style>
+html {
+  zoom: 4;
+  overflow: hidden;
+  background: #000;
+  position: absolute;
+}
+* { 
+    image-rendering: optimizeSpeed;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: -o-crisp-edges;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: pixelated;
+    image-rendering: optimize-contrast;
+}
+a > a[href] {
+  color: inherit;
+}
+a:hover {
+  opacity: 1;
+}
+fixed, debug {
+  position: fixed;
+  bottom: 2px;
+  left: 2px;
+  font-size: 5px;
+  text-shadow: 0 0 1px #000;
+  z-index: 999;
+}
+fixed > img {
+  height: 5px;
+  padding-right: 1px;
+  filter: drop-shadow(0 0 1px black);
+}
+debug {
+  display: none;
+  top: 0;
+  left: 0;
+  bottom: auto;
+  color: #fff;
+  font-size: 2.5px;
+  right: auto;
+  background: rgba(0,0,0,.5);
+}
+body {
+  position: relative;
+  background: #444;
+  
+  margin: 0;
+  font-family: Helvetica;
+  color: #ff0;
+  width: 110px;
+  height: 100vh;
+  display: inline-block;
+}
+div {
+  position: absolute;
+  top: var(--y);
+  left: var(--x);
+  width: 10px;
+  height: 10px;
+  background: #aaa;
+  font-size: 5px;
+  color: #000;
+  transition: transform .2s;
+}
+panel {
+  position: fixed;
+  bottom: 1px;
+  right: 0;
+  z-index: 999;
+  font-size: 0;
+  padding: 1px 5px 1px 1px;
+  background: rgba(0,0,0,.5);
+}
+panel > button {
+  padding: 1px 2px;
+  color: #ccc;
+  background: rgba(0,0,0,.5);
+  border: none;
+  outline: none;
+  cursor: pointer;
+  font-size: 3px;
+  margin: 0 .5px;
+}
+tab {
+  --zoom: 5px;
+  position: fixed;
+  overflow: hidden;
+  top: var(--zoom);
+  right: var(--zoom);
+  bottom: var(--zoom);
+  left: var(--zoom);
+  display: block;
+  background: rgba(0,0,0,.8);
+  z-index: 999;
+  border-radius: 2px;
+  font-size: 4px;
+  color: #fff;
+}
+tab > a#title {
+  display: block;
+  padding: 3px;
+  text-align: center;
+}
+tab > a#close {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  cursor: pointer;
+}
+preview {
+  width: 10px;
+  height: 10px;
+  display: inline-block;
+  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAB3RJTUUH4wsHCjgvB9rOUAAAABd0RVh0U29mdHdhcmUAR0xEUE5HIHZlciAzLjRxhaThAAAACHRwTkdHTEQzAAAAAEqAKR8AAAAEZ0FNQQAAsY8L/GEFAAAABmJLR0QA/wD/AP+gvaeTAAAAW0lEQVR4nGP4//8/Az4cpMHw31GBAb+idCOG/432DP9BivGaVGLB8B+kGMQnaBJMjKBJWBViMwlDIS6TUBQ6Ozv/t7GxwWoSXCFIUX19/X8QjS+oGEAmEVIEwgBgvQUwoudOTwAAAABJRU5ErkJggg==);
+}
+box {
+  display: block;
+  overflow-y: scroll;
+  height: calc(100% - 10px)
+}
+item {
+  display: block;
+  padding: 0 2px;
+  position: relative;
+  margin-bottom: 1px;
+}
+item > a {
+  position: absolute;
+  left: 14px;
+  top: 1px;
+}
+item > recipe {
+  vertical-align: super;
+}
+item > button {
+  font-size: 5px;
+  padding: 0;
+  position: absolute;
+  height: 100%;
+  right: 2px;
+  background: rgba(255,255,255,.5);
+  border: none;
+  color: #fff;
+}
+progress::-webkit-progress-value {
+  background: #ff0;
+  transition: .5s;
+}
+progress::-webkit-progress-bar {
+  background: rgba(0,0,0,.5);
+}
+progress {
+  z-index: 999;
+  position: fixed;
+  top: 3px;
+  left: 2px;
+  width: calc(100% - 4px);
+  height: 1.5px;
+  background: rgba(0,0,0,.5);
+  padding: .5px .5px 0 .5px;
+}
+progress#experience::-webkit-progress-value {
+  background: #090;
+}
+progress#experience {
+  top: 4.5px;
+  padding: 0 .5px .5px .5px;
+}
+progress#power + a {
+  z-index: 999;
+  position: fixed;
+  top: 7px;
+  left: 2px;
+  font-size: 3px;
+}
+progress#experience + a {
+  z-index: 999;
+  position: fixed;
+  top: 7px;
+  width: 100%;
+  text-align: center;
+  font-size: 3px;
+}
+</style>
+<script>
+var defaultconf = {
+	layer: '10',
+  fid: '1',
+  lid: '0',
+  damage: '1',
+  inventory: {
+    block: 0,
+    gravel: 0,
+    coal: 0,
+    iron: 0,
+    gold: 0
+  }
+}
+var box = $('div')
+var control = $('div#0')
+var layer = 10
+var grid = {
+	'width': 11,
+  'step': 10
+}
+var textures = {
+	unknown: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAR0lEQVQoU2NkgIIvzmb/YWxkmmfvKUYQH0yAFMEE0BXD5BhhDEKK4QrxmQwyBEUhLsVYFWJTjFMhumK8CpEVgxUSHTzEBjgAotBWkzVvtSoAAAAASUVORK5CYII=',
+	block: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAB3RJTUUH4wsHBzA6qgYz4AAAABd0RVh0U29mdHdhcmUAR0xEUE5HIHZlciAzLjRxhaThAAAACHRwTkdHTEQzAAAAAEqAKR8AAAAEZ0FNQQAAsY8L/GEFAAAABmJLR0QA/wD/AP+gvaeTAAAAkElEQVR4nF2P2wYEMRBEc1khhPzpmrc1b2sexnxwCCGyqjnEFq36Xt3+e11rzul6705IKRnHGJ3yiuUHBWMMK4p3U621Zn5QN5tKKTYtI661Wuzfx7GQgJGGZS9NAO5UQXI0CYEN2ibbpanlnF3gaBL7IE/K9/fzLCTFbNuhfOAWPsdXkVP0h/+c5/pv2p8BPwCSZJTGXfZUAAAAAElFTkSuQmCC',
+  gravel: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAB3RJTUUH4wsHCDEFDidooQAAABd0RVh0U29mdHdhcmUAR0xEUE5HIHZlciAzLjRxhaThAAAACHRwTkdHTEQzAAAAAEqAKR8AAAAEZ0FNQQAAsY8L/GEFAAAABmJLR0QA/wD/AP+gvaeTAAABL0lEQVR4nB2Q606DQBCFzy4UgjT0IrVJMRGjD2j6BE1N38/4o8YfTU0bqoBAuFRaru7sJJPNzs6c78yy1Xrd53mOk+fhbj6HaZqg6LoOkRfBeXKgKAr42/snzuczVFWF7/sIvQOOB5HHI4IihycEwjAEe1kue13X5RQFPRiGAcaYvCdJAm0wgHq9XiWCGUxiuWgYDoeg+l8a40YMkSVOU72hg3OOS1nCGo1QFAW87xgDxYIq1NI0BXvdbPrdbofxeIxSNNIZBgFasYzjOBJPBF5VFbq2RV3XsCwLmqbh1rZRCfTHdisbsywDj+MYGu/lMl/7PfxDINEPrgtTKJ1+YjRNAz6bzXD/+IwsCjCZTvGbBUjSUtogVUr6BZUKZPbSAu5igYVIopANVCXMiS1p//a1mdgJ8MqdAAAAAElFTkSuQmCC',
+  coal: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAB3RJTUUH4wsHCBQebLFxqgAAABd0RVh0U29mdHdhcmUAR0xEUE5HIHZlciAzLjRxhaThAAAACHRwTkdHTEQzAAAAAEqAKR8AAAAEZ0FNQQAAsY8L/GEFAAAABmJLR0QA/wD/AP+gvaeTAAAAwUlEQVR4nE2QOwqGQAyEw+8DOwtbS0tLb2QvLIhgIQiC1/EUXscDCJqfLxDZhWEfmZnMRuq61rZtdRxHwzzPhmVZbF/XVbdtU6mqSgGkYRg+wTRNigk1RIKCR9Q4U+QOoes6e4OTXtclz/NInudSFIXhfV/p+15YSZJYXbB1xG1DCF9ma03QpmmsJUWP4TvY913NkSyQXe1Cd7Rfw45b4xTH8dH97vu2wKwsy77zcRxynqd9rixLERzchTH4gOM7+AN3O8RmKfyghAAAAABJRU5ErkJggg==',
+  iron: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAB3RJTUUH4wsICS0Y0vcjRAAAABd0RVh0U29mdHdhcmUAR0xEUE5HIHZlciAzLjRxhaThAAAACHRwTkdHTEQzAAAAAEqAKR8AAAAEZ0FNQQAAsY8L/GEFAAAABmJLR0QA/wD/AP+gvaeTAAAA4ElEQVR4nFVQOwrCUBAcXkgkVbC3sBZsvIBCbiJYBQKBEEkRCARS2lh5BZtcwMJjWNtZWYhKEsKTWVjRhXm/fbMzuzgdSns9H22apoI8zwVFUchelqWtqsqax/ON1/0GRtd16Pte0LYtwukI69VM3kFGlmXC1uq889zstvbS7KUq4ji2URTZJEm+CVrgZy1AG+CiUJ/8QKJ6Zs54noflxMEmnGMYBhhj4DgOXNcVMHzfh1RUSWXTn1rgG7tGXdd/0pT9taOjM2ydUgxK6Zl2FuNORhcEAaDdkc0x6IB/78QHcZ/TLbIyvZUAAAAASUVORK5CYII=',
+  gold: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAB3RJTUUH4wsHCBI46OZT0QAAABd0RVh0U29mdHdhcmUAR0xEUE5HIHZlciAzLjRxhaThAAAACHRwTkdHTEQzAAAAAEqAKR8AAAAEZ0FNQQAAsY8L/GEFAAAABmJLR0QA/wD/AP+gvaeTAAAAnElEQVR4nE2QUQoDIQxEc5LeqLfonyAIIvghCIL36z16hTa7MzLWhVlxM/OSrLmb48k5U7VWqrXGs/fuYwy37/t52140xRh3oJTigiBkSOAj0irgDsDv8yAEHgMlhOAppV0UUQAS8ZLOtghqZhoxqFqiKIpOaM65iGsh2+k1m28it4b7bA3SOY4C3BrSfxP1v7UtorZDUSEUzjt0AXyXBus5LLlvAAAAAElFTkSuQmCC',
+  pickhead: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAB3RJTUUH4wsHCwASSe9UjQAAABd0RVh0U29mdHdhcmUAR0xEUE5HIHZlciAzLjRxhaThAAAACHRwTkdHTEQzAAAAAEqAKR8AAAAEZ0FNQQAAsY8L/GEFAAAABmJLR0QA/wD/AP+gvaeTAAAAWElEQVR4nI3PMQ7AIAxD0dz/ZFmyZ82UhTukciVXKaiU4U88sJCqEqaqxcys+pnMMCLK3e86fkFiAFzIzAcvkBHz5U/YMVa2EADzR3CM8Q85fwSBtr+euwB40DjK+t8TwgAAAABJRU5ErkJggg==',
+  emerald: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAB3RJTUUH4wsICS84269hDgAAABd0RVh0U29mdHdhcmUAR0xEUE5HIHZlciAzLjRxhaThAAAACHRwTkdHTEQzAAAAAEqAKR8AAAAEZ0FNQQAAsY8L/GEFAAAABmJLR0QA/wD/AP+gvaeTAAAAu0lEQVR4nF1Q7QrCMAyMnRT3uDKZ7KNsTib4UvpXfJjCYDAYlNrLOBFzhGa57nKp9MMQXdfFU1lqdgkI9Oq2jeCv4xhNCEHWdRUEzkvCMwE1uHmetd7hj2VZJMsyvQwSYa3VZG/vvdcCTZ5URx5uVvoEgRf6os9zVcVjUWgtCY8EAwX6giIsIDm6dq287u9NEdsx/yegp1vnef5VoS9OIDdN07Y1zEcX1HTjnJJ4CY7Ht0EDSRWSUPt9ng+SWa3YnLml8QAAAABJRU5ErkJggg==',
+  obsidian: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAB3RJTUUH4wsICTcJCGr5bQAAABd0RVh0U29mdHdhcmUAR0xEUE5HIHZlciAzLjRxhaThAAAACHRwTkdHTEQzAAAAAEqAKR8AAAAEZ0FNQQAAsY8L/GEFAAAABmJLR0QA/wD/AP+gvaeTAAAAuklEQVR4nD2QiQ6CQAxEBxcVRMMtxw/wm/y0J2qdWRf70kyTbjrtRhMmW7DgRq5E6siBHIl0RzBgMGWP3mrUVqHyqjzj7LNBY47TZjD2gRNJSETeRG5ycinS+YMfCj1QLTv2sCUxQYHCWrQm5U4+V/sS5b92GTJv7QIbIpU9e36ykVg7JIH14RK4kAdRjRGjKWUvqxy5V+V6fYfOYi2uAzTN/xdDB7yIek8idZw0q3En+gapQpeul2vIF5aqWpVWq2pHAAAAAElFTkSuQmCC',
+  ruby: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAB3RJTUUH4wsICS4XaWVtFgAAABd0RVh0U29mdHdhcmUAR0xEUE5HIHZlciAzLjRxhaThAAAACHRwTkdHTEQzAAAAAEqAKR8AAAAEZ0FNQQAAsY8L/GEFAAAABmJLR0QA/wD/AP+gvaeTAAAAwklEQVR4nE1QWwqDMBDcVMmvB/MuRWqr+CHaQFsF8TR6DsEvbyIIsnWWrDhkyb4yuxPDccw0DPTKcwKstXIHQUD7vksMn/g4XFX8zDK+J4ncMBAA8MujHr6do3Vd5SUMLIJxJKpriqJIcgYsOqJfFtI1ZJxfARbixQnPgsK2bWcTEIIJSbA+0pSsb0C+mWeZ8GtbumnTZ5qo77pTtezqJ4j/bRpRperzopD4alBuaudYGVQxRl9/ArEBg370VamKUfwBo8CKCW19uVkAAAAASUVORK5CYII=',
+  'obsidian-iron': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAB3RJTUUH4wsICi8c5eo7hgAAABd0RVh0U29mdHdhcmUAR0xEUE5HIHZlciAzLjRxhaThAAAACHRwTkdHTEQzAAAAAEqAKR8AAAAEZ0FNQQAAsY8L/GEFAAAABmJLR0QA/wD/AP+gvaeTAAAA30lEQVR4nE2QOQpCQRBEH4or7vuCuH0DIw/mAUw9gYmRXkAw8QIGnsHI2IuUvwbmI03TM9NMva7meTnq+7przFhNmipSVIWKunQ1Z64tW+3YicfpoM/jrBGj0OzQCdUZRXr0RImSWrQ0ZZo1EpJwjiJlyqJGTc427axh5Jq1Nmy0YBFoWK1PP6jGTxHvz/Gcy5Pndtnzfl09BoU0cmmkOItQT8NvNGhkyCXLgPR8vg8YhE1UqYoJEzmNN8oNV6eRNjdkKDyod+hq504b+HdtEYxbsQoXj2EzRs6YZaN4Cz+l/5M0p4/nmgAAAABJRU5ErkJggg==',
+  'obsidian-gold': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAB3RJTUUH4wsICjIzsVdqwwAAABd0RVh0U29mdHdhcmUAR0xEUE5HIHZlciAzLjRxhaThAAAACHRwTkdHTEQzAAAAAEqAKR8AAAAEZ0FNQQAAsY8L/GEFAAAABmJLR0QA/wD/AP+gvaeTAAAA10lEQVR4nE2Q2W3DMBBEn5D4hOFbvgTH94c/AleSLtKwCkgHacEac9ahES4WlDTcNyMiIa81a40YqU1bPXqaMdOOna5cdeMm7vVXOvatFasQp0xjd2fInLno0NGYsSqql3DmLAOa34/41qUrBgzknjBRptvyxEkXLtqzDzdMKymDmoeyvYfzM/+zZNGZHOXAIehBHDL8syQEW+bBBYu4iT59sWEjt+1Ns+Dd/XSTliz13tBQpHpLle4Qr1aqn/qToqrTW5FOlGC7I8cgOoZ/xpZbtq8ozvkAwFqavTUrW2QAAAAASUVORK5CYII=',
+  'obsidian-emerald': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAB3RJTUUH4wsICjMxRkI6rgAAABd0RVh0U29mdHdhcmUAR0xEUE5HIHZlciAzLjRxhaThAAAACHRwTkdHTEQzAAAAAEqAKR8AAAAEZ0FNQQAAsY8L/GEFAAAABmJLR0QA/wD/AP+gvaeTAAAA5ElEQVR4nE2QWWqCQRCEvz8aFxD3fV8RnzyBeIqQw/ggEnKtkEvlIQRS6Rr8JVM0s3R3VfWwZ683XfWpDzVoqERJVarq0NGChQ4cdOQoRoxUEanYyTbttDtygi5dUaasJk1NmGjOXDt22rLVlOmDoEKcatTkaNHSgMGDZcMmNS1ZashQmK1HL7G64b8NN+dWMj+eOPOSvfJ7RyEQlojB0v07UHznxoUrMWkqeAr83PEVcJHPjBnLYXlL+Yu8514ta+9FU2cBs1nK6zmQKznnGlastGadGOvU00B9+poxk3Oe3h//B2HpiOnY9lTbAAAAAElFTkSuQmCC',
+  'obsidian-ruby': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAB3RJTUUH4wsICjAK3GSASQAAABd0RVh0U29mdHdhcmUAR0xEUE5HIHZlciAzLjRxhaThAAAACHRwTkdHTEQzAAAAAEqAKR8AAAAEZ0FNQQAAsY8L/GEFAAAABmJLR0QA/wD/AP+gvaeTAAAA4ElEQVR4nD2QW04DMQxFT2GgI1T1/Vaf01ZdQPvJDkasCXUnbAKxIn75KwgVcbFNMzm640mc2Lmp7dnrwoUv49PweGs8GA3D473BhIlcY8bq0VOXbkSXyifp+aQ+fVGnXi0sWGjHTlu2mjGTyCKXk8vLVwsjRlqyDG3YxKEVq+hGm7YGDOTRD7lS+w6d6r8WH/75vfJRPsLxSHF6ifm3kbnj/Iq7vTF4fcPH2fBNvocpU7mSoRataOlK7v3umZf2tqmKv92d8WN47r08xDVYs1ZBEYaaNMPMkKHmzOW59CJ/IJp+7HpFXEEAAAAASUVORK5CYII='
+}
+var tickspeed = 50
+var started = false
+var vdebug = false
+var fid = 1
+var lid = 0
+var damage = 1
+var inventory = {
+	block: 0,
+  gravel: 0,
+  coal: 0,
+  iron: 0,
+  gold: 0,
+  emerald: 0,
+  obsidian: 0,
+  ruby: 0,
+  all: 0
+}
+var power = 1
+var nowselected = -1
+var pickaxes = [
+	{
+  	id: 0,
+  	name: 'Flint Pickaxe',
+    color: 'invert(1) brightness(1.3)',
+    damage: 2,
+    recipe: [
+    	{
+      	name: 'gravel',
+        count: 5
+      }
+    ],
+    have: false,
+    selected: false
+  },
+	{
+  	id: 1,
+  	name: 'Coal Pickaxe',
+    color: 'invert(1)',
+    damage: 3,
+    recipe: [
+    	{
+      	name: 'iron',
+        count: 2
+      },
+      {
+      	name: 'coal',
+        count: 5
+      }
+    ],
+    have: false,
+    selected: false
+  },
+  {
+  	id: 2,
+  	name: 'Iron Pickaxe',
+    color: 'brightness(0.9)',
+    damage: 5,
+    recipe: [
+    	{
+      	name: 'iron',
+        count: 10
+      },
+      {
+      	name: 'coal',
+        count: 4
+      }
+    ],
+    have: false,
+    selected: false
+  },
+  {
+  	id: 3,
+  	name: 'Golden Pickaxe',
+    color: 'brightness(0.7) sepia(1) contrast(2)',
+    damage: 10,
+    recipe: [
+    	{
+      	name: 'gold',
+        count: 10
+      },
+      {
+      	name: 'coal',
+        count: 6
+      }
+    ],
+    have: false,
+    selected: false
+  },
+  {
+  	id: 4,
+  	name: 'Emerald Pickaxe',
+    color: 'brightness(0.6) contrast(2) sepia(1) hue-rotate(45deg) contrast(2)',
+    damage: 13,
+    recipe: [
+    	{
+      	name: 'emerald',
+        count: 10
+      },
+      {
+      	name: 'obsidian',
+        count: 6
+      }
+    ],
+    have: false,
+    selected: false
+  },
+  {
+  	id: 5,
+  	name: 'Obsidian Pickaxe',
+    color: 'brightness(0.3) sepia(1) hue-rotate(230deg) contrast(3)',
+    damage: 15,
+    recipe: [
+    	{
+      	name: 'obsidian',
+        count: 15
+      },
+      {
+      	name: 'ruby',
+        count: 7
+      },
+      {
+      	name: 'emerald',
+        count: 8
+      }
+    ],
+    have: false,
+    selected: false
+  },
+  {
+  	id: 6,
+  	name: 'Ruby Pickaxe',
+    color: 'brightness(0.4) sepia(1) hue-rotate(320deg) contrast(5)',
+    damage: 19,
+    recipe: [
+    	{
+      	name: 'obsidian',
+        count: 15
+      },
+      {
+      	name: 'ruby',
+        count: 30
+      },
+      {
+      	name: 'emerald',
+        count: 10
+      },
+      {
+      	name: 'coal',
+        count: 50
+      }
+    ],
+    have: false,
+    selected: false
+  }
+]
+var blockexp = {
+	block: 1,
+  gravel: 1,
+  coal: 2,
+  iron: 3,
+  gold: 5,
+  emerald: 7,
+  obsidian: 9,
+  ruby: 11,
+  'obsidian-iron': 6,
+  'obsidian-gold': 10,
+  'obsidian-emerald': 14,
+  'obsidian-ruby': 20,
+  all: 0
+}
+var blockdamage = {
+	block: 0,
+  gravel: 1,
+  coal: 2,
+  iron: 2,
+  gold: 3,
+  emerald: 5,
+  obsidian: 10,
+  ruby: 15,
+  'obsidian-iron': 12,
+  'obsidian-gold': 13,
+  'obsidian-emerald': 15,
+  'obsidian-ruby': 25
+}
+var explevel = 0 
+var levelup = 10
+var experience = 0
+var tick = setInterval(function(){
+	if(started!==true){
+  	start()
+    started = true
+  }
+  if(vdebug===true){
+  	debug()
+  }
+  if(layer>500){
+  	$('fixed>img').css({
+    	filter: 'drop-shadow(0 0 1px white)'
+    })
+  }
+  
+  $('a#depth').text(layer/grid['step'])
+  $('a#debug').text(control.position().left+'/'+control.position().top)
+  $('html').css({
+  	top: -control.position().top+grid['step']
+  })
+  onMove(83,false,control,3)
+  if(layer!==Math.ceil(control.position().top/grid['step'])*grid['step']){
+    generateworld(0,(layer+grid['step']*8),grid['step'],grid['width'],1)
+    layer = Math.ceil(control.position().top/grid['step'])*grid['step']
+    if(layer>grid['step']*4){
+    	for(var i=0;i<grid['width'];i++){
+        $('div#'+(fid+i)).remove()
+      }
+      fid += grid['width']
+    }
+    init()
+  }
+}, tickspeed)
+var currethtab = 'null'
+var powerneedup = 10
+function start(){
+	generateworld(0,20,grid['step'],grid['width'],7)
+  box.eq(0).attr('id','0')
+  init()
+  bindMove()
+  bind()
+  $('<a>').appendTo('body')
+  	.html('Code by <a href="//vk.com/fleisar" target="_blank">Fleisar</a><br/>Textures by <a href="//vk.com/r.dalek" target="_blank">Demonoed</a><br/>From _FHZ Group')
+  	.css({
+    	position: 'fixed',
+      'font-size': '4px',
+      right: '1px',
+      bottom: '9px',
+      opacity: '.5',
+      'z-index': '998'
+    })
+}
+function debuggame(){
+	$('debug').show()
+	$('a.db-position').text(control.position().left+'/'+control.position().top)
+	$('a.db-fid').text(fid)
+  $('a.db-lid').text(lid)
+  $('a.db-damage').text(damage)
+  $('a.db-power').text(power)
+  $('a.db-inventory').text(JSON.stringify(inventory))
+}
+function init(){
+  box = $('div')
+  control = $('div#0')
+}
+function bind(){
+	$('button.tohome').unbind('click')
+  $('button.tohome').click(function(){
+  	respawn()
+  })
+  $('button.restart').unbind('click')
+  $('button.restart').click(function(){
+  	restart()
+  })
+  $('button.pickaxes').unbind('click')
+  $('button.pickaxes').click(function(){
+  	$(window).unbind('keydown')
+    drawpickaxetab()
+    $('tab').css({
+    	display: 'block'
+    })
+    $('tab>a#close').click(function(){
+    	$(this).unbind('click')
+      bindMove()
+      $(this).parent('tab').css({
+      	display: 'none'
+      })
+    })
+  })
+  $('button.make').unbind('click')
+  $('button.make').click(function(){
+  	var id = parseInt($(this).attr('make'))
+    makepickaxe(id)
+  })
+  $('button.select').unbind('click')
+  $('button.select').click(function(){
+  	var id = parseInt($(this).attr('select'))
+    selectpickaxe(id)
+  })
+}
+function generateworld(b,l,y,a,t){
+  for(var i=0;i<a*t;i++){
+  	lid++
+  	var element = $('<div>',{type: 'block', id: lid, diff: '10', damaged: '0'})
+    	.appendTo($('body'))
+      .css({
+    		'--x': b+y*(i%a),
+      	'--y': l+y*Math.floor(i/a)
+    	})
+    if(layer>500){
+      element.css({background: '#668'})
+        .attr('type', 'obsidian')
+        .attr('diff', '100')
+    }
+    var chance = Math.floor(Math.random()*15+1)
+    switch (chance){
+    	case 1:
+      	if(layer>500){
+        	element.css({background: '#cc0'})
+            .attr('type', 'obsidian-gold')
+            .attr('diff', '150')
+        }else{
+        	element.css({background: '#cc0'})
+            .attr('type', 'gold')
+            .attr('diff', '50')
+        }
+      break
+      case 2:
+      case 3:
+      	if(layer>500){
+        	element.css({background: '#961'})
+            .attr('type', 'obsidian-iron')
+            .attr('diff', '125')	
+        }else{
+          element.css({background: '#961'})
+            .attr('type', 'iron')
+            .attr('diff', '25')
+        }
+      break
+      case 4:
+      case 5:
+      case 6:
+      	if(layer>500){
+        	
+        }else{
+          element.css({background: '#999'})
+            .attr('type', 'gravel')
+            .attr('diff', '5')
+        }
+      break
+      case 7:
+      case 8:
+      	if(layer>500){
+        	
+        }else{
+        	element.css({background: '#666'})
+            .attr('type', 'coal')
+            .attr('diff', '15')
+        }
+      	
+      break
+      case 9:
+      case 10:
+      	if(layer>400){
+        	element.css({background: '#668'})
+            .attr('type', 'obsidian')
+            .attr('diff', '100')
+        }
+      break
+      case 11:
+      	if(layer>400){
+        	element.css({background: '#800'})
+            .attr('type', 'obsidian-ruby')
+            .attr('diff', '400')
+        }else if(layer>125){
+        	element.css({background: '#800'})
+            .attr('type', 'ruby')
+            .attr('diff', '200')
+        }
+      break
+      case 12:
+      	if(layer>400){
+        	element.css({background: '#080'})
+            .attr('type', 'obsidian-emerald')
+            .attr('diff', '165')
+        }else if(layer>150){
+        	element.css({background: '#080'})
+            .attr('type', 'emerald')
+            .attr('diff', '65')
+        }
+      break
+    }
+    if(layer>500||element.attr('type')==='obsidian'){
+    	var rotate = 0
+    }else{
+    	var rotate = Math.floor(Math.random()*3+1)
+    }
+    element.css({
+    	'background-image': 'url('+textures[element.attr('type')]+')',
+      'transform': 'rotateZ('+(90*rotate)+'deg)'
+    })
+  }
+  init()
+}
+function bindMove(){
+	$(window).keydown(function(e){
+  	$(window).unbind('keydown')
+    var keydown = setInterval(function(){
+    	onMove(e.which,true,control,2)
+    }, 100)
+    $(window).keyup(function(){
+    	$(window).unbind('keyup')
+      clearInterval(keydown)
+      bindMove()
+    })
+  })
+}
+function onMove(key,keyboard,entity,speed){
+	var element = entity
+  var x = element.position().left
+  var y = element.position().top
+  var c = 0
+	switch (key){
+  	case 87:
+    	return
+    	for(var i=fid;i<lid;i++){
+      	var elm = $('div#'+i)
+      	if(
+        	y-speed < elm.position().top+elm.height() &&
+        	y-speed > elm.position().top &&
+        	(
+          	(
+            	x >= elm.position().left &&
+              x <= elm.position().left+elm.width()
+            ) ||
+            (
+            	x+element.width() >= elm.position().left &&
+        			x+element.width() <= elm.position().left+elm.width()
+            )
+          ) &&
+        	element.attr('id') !== elm.attr('id')
+        ){
+        	return
+        }else{
+        	c++
+        }
+      }
+      if(c!==0){
+      	element.css({
+          '--x': x,
+          '--y': y-speed
+        })
+      }
+    break
+    case 65:
+    	for(var i=fid;i<lid;i++){
+      	var elm = $('div#'+i)
+      	if(
+        	x-speed < elm.position().left+elm.width() &&
+          x-speed > elm.position().left &&
+          (
+          	(
+            	y >= elm.position().top-1 &&
+              y <= elm.position().top+elm.height()-1
+            ) ||
+            (
+            	y+element.height() >= elm.position().top+1 &&
+              y+element.height() <= elm.position().top+elm.height()+1
+            )
+          ) &&
+          element.attr('id') !== elm.attr('id')
+        ){
+          if(keyboard === true){
+          	breakblock(elm)
+          }
+          return
+        }else{
+        	if(x-speed>=0){
+          	c++
+          }
+        }
+      }
+      if(c!==0){
+      	element.css({
+          '--x': x-speed,
+          '--y': y,
+          'transform': 'rotate3d(0, 1, 0, 180deg)'
+        })
+      }
+    break
+    case 83:
+    	for(var i=fid;i<lid;i++){
+      	var elm = $('div#'+i)
+      	if(
+        	y+element.height()+speed < elm.position().top+elm.height() &&
+          y+element.height()+speed > elm.position().top &&
+          (
+          	(
+            	x >= elm.position().left-1 &&
+              x <= elm.position().left+elm.width()-1
+            ) ||
+            (
+            	x+element.width() >= elm.position().left+1 &&
+              x+element.width() <= elm.position().left+elm.width()+1
+            )
+          ) &&
+          element.attr('id') !== elm.attr('id')
+        ){
+          if(keyboard === true){
+          	breakblock(elm)
+          }
+          element.css({
+            '--x': x,
+            '--y': Math.ceil(y/10)*10
+          })
+          return
+        }else{
+        	c++
+        }
+      }
+      if(c!==0){
+      	element.css({
+          '--x': x,
+          '--y': y+speed
+        })
+      }
+    break
+    case 68:
+    	for(var i=fid;i<lid;i++){
+      	var elm = $('div#'+i)
+      	if(
+        	x+element.width()+speed < elm.position().left+elm.width() &&
+          x+element.width()+speed > elm.position().left &&
+          (
+          	(
+            	y >= elm.position().top-1 &&
+              y <= elm.position().top+elm.height()-1
+            ) ||
+            (
+            	y+element.height() >= elm.position().top+1 &&
+              y+element.height() <= elm.position().top+elm.height()+1
+            )
+          ) &&
+          element.attr('id') !== elm.attr('id')
+        ){
+          if(keyboard === true){
+          	breakblock(elm)
+          }
+          return
+        }else{
+        	if(x+element.width()+speed<=$('body').width()){
+          	c++
+          }
+        }
+      }
+      if(c!==0){
+      	element.css({
+          '--x': x+speed,
+          '--y': y,
+          'transform': 'rotate3d(0, 1, 0, 0deg)'
+        })
+      }
+    break
+    case 81:
+    	var command = prompt('', '')
+      switch (command){
+      	case 'hesoyam':
+        	invetory = {
+          	block: 100,
+            coal: 100,
+            iron: 100,
+            gold: 100,
+            emerald: 100,
+            obsidian: 100,
+            ruby: 100
+          }
+          updatetext()
+        break
+        case 'debug':
+        	window.debug = !window.debug
+        break
+      }
+    break
+    default:
+    	// UwU
+    break
+  }
+}
+function breakblock(element){
+	var diff = parseInt(element.attr('diff'))
+  var damaged = parseInt(element.attr('damaged'))
+  var type = element.attr('type')
+  if(blockdamage[type]>damage+power){
+  	return
+  }
+	if(diff>damaged){
+  	var progress = damaged/diff
+  	damaged += damage+power
+  	element.attr('damaged', damaged)
+      .css({
+      	'box-shadow': 'inset 0 0 0 '+5*progress+'px rgba(0,0,0,.5)'
+      })
+  	return
+  }
+  if(type.substr(0,9) !== 'obsidian-'){
+  	inventory[type]++
+    $('a#'+element.attr('type'))
+  		.text(inventory[type])
+  }else{
+  	inventory[type.substr(9)]++
+    var vtype = type.substr(9)
+    $('a#'+vtype)
+  		.text(inventory[vtype])
+  }
+  inventory['all']++
+  if(inventory['all']>=powerneedup){
+  	inventory['all'] -= powerneedup
+  	powerneedup *= 2;
+    power++
+  }
+  experience += blockexp[type]
+  if(experience>=levelup){
+  	experience -= levelup
+    explevel++
+    levelup = explevel*(10*2)
+  }
+  
+  switch(element.attr('type')){
+  	case 'iron':
+  	case 'gold':
+  	case 'gravel':
+  	case 'block':
+    default:
+    break
+  }
+	element.css({
+  	'--x': '-10px',
+    '--y': '-10px'
+  })
+  updatetext()
+}
+function respawn(){
+	for(var i=1;i<box.length-1;i++){
+  	box.eq(i).remove()
+  }
+	layer = 10
+  fid = 1
+  lid = 0
+	control.css({
+  	'--x': 50,
+    '--y': 10
+  })
+  generateworld(0,20,grid['step'],grid['width'],7)
+}
+function restart(){
+	respawn()
+  $('a#gold')
+  	.text(inventory['gold']+'G')
+  $('a#iron')
+  	.text(inventory['iron']+'I')
+  $('a#coal')
+  	.text(inventory['coal']+'C')
+  damage = defaultconf['damage']
+  inventory = defaultconf['inventory']
+  started = false
+}
+function drawpickaxetab(){
+	var tab = $('tab>box')
+  tab.html('')
+	for(var i=0;i<pickaxes.length;i++){
+  	var id = pickaxes[i][`id`]
+    var name = pickaxes[i][`name`]
+    var color = pickaxes[i][`color`]
+    var damage = pickaxes[i][`damage`]
+    var recipe = pickaxes[i][`recipe`]
+    var have = pickaxes[i][`have`]
+    var selected = pickaxes[i][`selected`]
+    var c = 0
+    var ingredients = ``
+    for(var i2=0;i2<recipe.length;i2++){
+    	var ingredient = recipe[i2]
+      var type = ingredient[`name`]
+      if(ingredient[`count`]>inventory[type]){
+      	c++
+        ingredients += '<a style="color:#900">'+ingredient[`count`]+' '+ingredient[`name`]+'; </a>'
+      }else{
+      	ingredients += '<a style="color:#090">'+ingredient[`count`]+' '+ingredient[`name`]+'; </a>'
+      }
+    }
+    if(c===0&&have!==true&&selected!==true){
+    	var h_element = `
+        <item id='d-`+id+`'>
+          <preview>
+          	<img style="filter:`+color+`" src="`+textures[`pickhead`]+`">
+          </preview>
+          <a>`+name+` [`+damage+`]</a>
+          <recipe>`+ingredients+`</recipe>
+          <button class="make" make="`+id+`">Make</button>
+        </item>
+      `
+    }else if(have===true&&selected!==true){
+    	var h_element = `
+        <item id='d-`+id+`'>
+          <preview>
+          	<img style="filter:`+color+`" src="`+textures[`pickhead`]+`">
+          </preview>
+          <a>`+name+` [`+damage+`]</a>
+          <button class="select" select="`+id+`">Select</button>
+        </item>
+      `
+    }else if(selected===true){
+    	var h_element = `
+        <item id='d-`+id+`'>
+          <preview>
+          	<img style="filter:`+color+`" src="`+textures[`pickhead`]+`">
+          </preview>
+          <a>`+name+` [`+damage+`]</a>
+        </item>
+      `
+    }else{
+    	var h_element = `
+        <item id='d-`+id+`'>
+          <preview>
+          	<img style="filter:`+color+`" src="`+textures[`pickhead`]+`">
+          </preview>
+          <a>`+name+` [`+damage+`]</a>
+          <recipe>`+ingredients+`</recipe>
+        </item>
+      `
+    }
+    tab.html(tab.html()+h_element)
+  }
+  bind()
+}
+function makepickaxe(id){
+	if(nowselected!==-1){
+  	pickaxes[nowselected][`selected`] = false
+  }
+	pickaxes[id][`have`] = true
+  pickaxes[id][`selected`] = true
+  nowselected = id
+  var recipe = pickaxes[id][`recipe`]
+  damage = pickaxes[id][`damage`]
+  for(var i=0;i<recipe.length;i++){
+  	var ingredient = recipe[i]
+    var type = ingredient[`name`]
+    inventory[type] -= ingredient[`count`]
+    $('a#'+type).text(inventory[type]+type[0].charAt(0).toUpperCase())
+  }
+  updatetext()
+  drawpickaxetab()
+}
+function opentab(tab){
+	if(currethtab!=='null'){
+  	$('tab#'+currethtab).css({
+    	display: 'none'
+    }) 
+  }
+  if(tab!=='null'){
+  	$('tab#'+tab).css({
+    	display: 'block'
+    })
+  }
+  currethtab = tab
+}
+function selectpickaxe(id){
+	if(nowselected!==-1){
+  	pickaxes[nowselected][`selected`] = false
+  }
+  pickaxes[id][`selected`] = true
+  damage = pickaxes[id][`damage`]
+  nowselected = id
+  drawpickaxetab()
+  updatetext()
+}
+function updatetext(){
+	$('progress#experience').attr('max', levelup)
+  $('progress#power').attr('max', powerneedup)
+  $('progress#experience').val(experience)
+  $('progress#experience+a').text(explevel)
+  $('progress#power').val(inventory[`all`])
+  $('progress#power+a').text(inventory[`all`]+'/'+powerneedup+' ['+power+'+'+damage+']')
+}
+</script>
+<bg style="background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAB3RJTUUH4wsHBzA6qgYz4AAAABd0RVh0U29mdHdhcmUAR0xEUE5HIHZlciAzLjRxhaThAAAACHRwTkdHTEQzAAAAAEqAKR8AAAAEZ0FNQQAAsY8L/GEFAAAABmJLR0QA/wD/AP+gvaeTAAAAkElEQVR4nF2P2wYEMRBEc1khhPzpmrc1b2sexnxwCCGyqjnEFq36Xt3+e11rzul6705IKRnHGJ3yiuUHBWMMK4p3U621Zn5QN5tKKTYtI661Wuzfx7GQgJGGZS9NAO5UQXI0CYEN2ibbpanlnF3gaBL7IE/K9/fzLCTFbNuhfOAWPsdXkVP0h/+c5/pv2p8BPwCSZJTGXfZUAAAAAElFTkSuQmCC);filter: brightness(0.5);position: fixed;top: 0;width: 100%;height: 100%"></bg>
+<fixed>
+  <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAB3RJTUUH4wsIChU1gvF9kwAAABd0RVh0U29mdHdhcmUAR0xEUE5HIHZlciAzLjRxhaThAAAACHRwTkdHTEQzAAAAAEqAKR8AAAAEZ0FNQQAAsY8L/GEFAAAABmJLR0QA/wD/AP+gvaeTAAAAjElEQVR4nJWQqQ4EIRBEOxscfB1iBAKBIhwCPpygEfRukbBHZsRsJ5USPKopiJnpjm5Bl6C1liFjzPJLEAfOOfbecyllacM/UM75DYQQOMbIWusPiIRa60pCIiB4SomP41jgg17TWqPeOwkhaM65JKWkMQYppWjNXovbWAmHkLjTTm9E0932u/Ff//gEZRT9fWd9qXMAAAAASUVORK5CYII="><a id="block">0</a>
+  <br/>
+  <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAB3RJTUUH4wsICgsO57uraAAAABd0RVh0U29mdHdhcmUAR0xEUE5HIHZlciAzLjRxhaThAAAACHRwTkdHTEQzAAAAAEqAKR8AAAAEZ0FNQQAAsY8L/GEFAAAABmJLR0QA/wD/AP+gvaeTAAAAc0lEQVR4nI3QIQ7AIBAEwFoMkKBIMHwCj0GheQeOH/DtbSC9pqW0VKzayV5yG4DtT96LXi1gQ0KIb3gsIcaI6+oU5ZzhnJtDQrVWpJT66RbCJwohoJQC7z2stVBKwRhzh4Q55x0xxiClhNb6CQmPWf5xzA4oQ/EY+tHBrwAAAABJRU5ErkJggg=="><a id="gravel">0</a>
+  <br/>
+  <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAB3RJTUUH4wsIChM53R2WPgAAABd0RVh0U29mdHdhcmUAR0xEUE5HIHZlciAzLjRxhaThAAAACHRwTkdHTEQzAAAAAEqAKR8AAAAEZ0FNQQAAsY8L/GEFAAAABmJLR0QA/wD/AP+gvaeTAAAAnUlEQVR4nI3PvQrCMBQF4IO6CO6+g+BL+wBODg5OHdycFFwEq6AWCpZWqoLD8SS5FqEdEvggyT35uSCJGFGhdvCWkPmGrLbkYcZ28LygD7GQSu5y1HTZHECYXCWTVPZyIp+rgLW/ZAA/cqmlD7weQG8MDKdal2FPw4IuNJKPAhMrXuRt5dT+6J7P5vbUTtaB22/++N/1r+Aa6+w6whdarBIVsb/y/AAAAABJRU5ErkJggg=="><a id="gold">0</a>
+  <br/>
+  <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAB3RJTUUH4wsIChIWb9eaJgAAABd0RVh0U29mdHdhcmUAR0xEUE5HIHZlciAzLjRxhaThAAAACHRwTkdHTEQzAAAAAEqAKR8AAAAEZ0FNQQAAsY8L/GEFAAAABmJLR0QA/wD/AP+gvaeTAAAAl0lEQVR4nJWQPQ7DIAyFrYaRKSMD978FB2BmYM4e8RMQgsGN3VJViiqlSE+W8WfzDCAi3NEt6AIaY5BkreV4ASfQe2e11rCUgs65TwND27ZhSglrrXgcB+77jt57FjURI+B9YoywLAvknDlf1xWEEDDG4PwxQSklF7TWoJTiu3M6hBBewPRIC9BT52S2Qpref279Dfz9j08orhACwb2DCAAAAABJRU5ErkJggg=="><a id="iron">0</a>
+  <br/>
+  <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAB3RJTUUH4wsICgwpDfCIxAAAABd0RVh0U29mdHdhcmUAR0xEUE5HIHZlciAzLjRxhaThAAAACHRwTkdHTEQzAAAAAEqAKR8AAAAEZ0FNQQAAsY8L/GEFAAAABmJLR0QA/wD/AP+gvaeTAAAAdklEQVR4nI2QyQrAIAxE9aAg6MH//1OJphnrlBZLqfDc8lwSp6ruD49FCGGAT9HaSClNEXOwiQya2G9gTyl6dDFGbKJpzllFxJPWmj8jJq4nO8BtNgrmtdbrz3xaVyLdzk6w3kTKTKiUMmFyW3kgskRM8LWOXxxELM3W4PFQXQAAAABJRU5ErkJggg=="><a id="coal">0</a>
+  <br/>
+  <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAB3RJTUUH4wsIChwPlT8faAAAABd0RVh0U29mdHdhcmUAR0xEUE5HIHZlciAzLjRxhaThAAAACHRwTkdHTEQzAAAAAEqAKR8AAAAEZ0FNQQAAsY8L/GEFAAAABmJLR0QA/wD/AP+gvaeTAAAA6klEQVR4nGP4//8/AzJmOG/8n+GZ5X8McWQO1wXr/0X/p/y3/p+DoRjO8LyR+3/9/wP/K491/zc8FvZf62sMimIwIXzR6X/v/xX/M153/J/6f93/pP8d/9kf2gFVOMAVQ1Qv1/zP8NX2v+o+r//Tvq75b/E1/T/DAq3/DK+t/jPs0gMrZGKAgW9/Gd4xfGZY8HgTw8VNJxkYPn9nYLj9lYHh7W+wNAuY1OACU28FvzC8vXaageET0BZloNiPf3BzUIPlofl/hm3a/xnWAZ1yTB9uLUbwgCTA7jpv+J9hkw724IELgDwGxOjiAIF26cAYd2grAAAAAElFTkSuQmCC"><a id="emerald">0</a>
+  <br/>
+  <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAB3RJTUUH4wsIERYrQ6BfogAAABd0RVh0U29mdHdhcmUAR0xEUE5HIHZlciAzLjRxhaThAAAACHRwTkdHTEQzAAAAAEqAKR8AAAAEZ0FNQQAAsY8L/GEFAAAABmJLR0QA/wD/AP+gvaeTAAAAdElEQVR4nGP4//8/AzEYzuBl4P9PlEJJBlkgjwGnYhQTYRinQpBJPAx8/2GmYlMMV6jAoPYfmUZXzMQABUAumH4FhBIMsgx/gFCf0fw/A1wB1ESQCboMJv8FGETgpiozaP7H8AzYUCAGuROkAD0EiApsEAYAILzeA5kxJDoAAAAASUVORK5CYII="><a id="obsidian">0</a>
+  <br/>
+  <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAB3RJTUUH4wsIChcvTaXmawAAABd0RVh0U29mdHdhcmUAR0xEUE5HIHZlciAzLjRxhaThAAAACHRwTkdHTEQzAAAAAEqAKR8AAAAEZ0FNQQAAsY8L/GEFAAAABmJLR0QA/wD/AP+gvaeTAAAAjUlEQVR4nGP4//8/AzEYQ+AZA/P/8wxM//EqvCwp9f9/aMT///pG/0EasCqEK2ps/v+/pAxDMZhYDqKAEmAFzm7//69e83+5rAJQhgXuDLDCXQyMYMH/qRn/z5tZ/D8fG/+/nZsXbCLYEGSrQTpBEu1AoUogBvGnQRVheAamGF0R1uABOWM5miKsCnFhANcGBnuqjjLYAAAAAElFTkSuQmCC"><a id="ruby">0</a>
+  <br/>
+  <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAW0lEQVQoU2NkIBIwoqubEhPzHySWs2QJihyGwqVp6f/ff/s6EApbg4L+f/r+naFz+3bsbgS5Dd1jD968Zqhetw6sAUXXjqJiuOI7r16ieAjD1yDF6IowTMQX9gBtNTULLCSEEgAAAABJRU5ErkJgggAA"><a id="depth">1</a>
+</fixed>
+<div type="player" style="--y:10px;--x:50px;background:transparent;width:5px;background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAKCAYAAAB8OZQwAAAAB3RJTUUH4wsHCgc7Rd4wEQAAABd0RVh0U29mdHdhcmUAR0xEUE5HIHZlciAzLjRxhaThAAAACHRwTkdHTEQzAAAAAEqAKR8AAAAEZ0FNQQAAsY8L/GEFAAAABmJLR0QA/wD/AP+gvaeTAAAAUUlEQVR4nGP4e9H3PzIGAgaG+zuc/6Njho/Xj/8H4aamJjANVgkThGGwIIhAFgALgi3w9YdgmEUgBkwlXJCp+xZcEMSGmwniwATggkAAIuCCAJIclWKO18gGAAAAAElFTkSuQmCC)"></div>
+<progress id="power" max="10" value="0"></progress>
+<a>0/10 [1+1]</a>
+<progress id="experience" max="10" value="0"></progress>
+<a>0</a>
+<panel>
+  <button class="restart">Restart</button>
+  <button class="tohome">To Home</button>
+  <button id="otab" class="pickaxes">Pickaxes</button>
+</panel>
+<tab id="pickaxe" style="display:none">
+  <a id="close">[X]</a>
+  <a id="title">Pickaxes</a>
+  <box>
+    
+  </box>
+</tab>
+<debug>
+  POSITION: <a class="db-position"></a>
+  FID: <a class="db-fid"></a>
+  LID: <a class="db-lid"></a>
+  DAMAGE: <a class="db-damage"></a>
+  POWER: <a class="db-power"></a>
+  INVENTORY: <a class="db-inventory"></a>
+</debug>
